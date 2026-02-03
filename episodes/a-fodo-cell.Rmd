@@ -1,0 +1,201 @@
+---
+title: 'A FODO Cell'
+teaching: 10
+exercises: 20
+---
+
+:::::::::::::::::::::::::::::::::::::: questions 
+
+How to simulate a particle beam travelling through a FODO cell 🧲?
+
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+::::::::::::::::::::::::::::::::::::: objectives
+
+Learn how to setup, run, and visualize a particle 
+beam simulation through a FODO (Focusing-Defocusing) cell with WarpX
+
+::::::::::::::::::::::::::::::::::::::::::::::::
+
+## Setup
+
+In this example we will simulate a particle beam travelling through a FODO cell.
+A **FODO cell** is a periodic focusing structure used in particle accelerators, consisting of alternating **F**ocusing (F) and **D**efocusing (D) quadrupole magnets, with **O** (drift) sections in between.
+The FODO cell is one of the most fundamental building blocks in accelerator physics, providing transverse focusing to keep particle beams confined as they travel through the accelerator.
+The alternating focusing and defocusing quadrupoles create a net focusing effect in both transverse planes, allowing the beam to be transported over long distances while maintaining its size.
+
+### WarpX for Beam Dynamics
+
+WarpX is a Particle-in-Cell (PIC) code that can track particles embedded in external fields. 
+Two important features are:
+
+* **Space charge effects**: 
+You can turn space charge effects on or off using the appropriate input parameters. 
+When enabled, WarpX solves the electromagnetic/static fields self-consistently from the particle distributions, 
+allowing you to study how the beam's own fields affect its dynamics.
+
+* **Arbitrary external fields**: 
+WarpX allows you to define arbitrary external electromagnetic fields, 
+either analytically or by loading them from files. 
+This makes it possible to model complex accelerator elements like quadrupoles, dipoles, and other magnets.
+
+::: caution
+
+**WarpX is not necessarily the best tool for all beam dynamics simulations**. 
+If space charge effects are negligible and you're primarily interested in the linear beam optics, 
+there are more specialized and computationally efficient tools available, such as ImpactX.
+
+:::
+
+### WarpX vs ImpactX
+
+**ImpactX** is another code from the same ecosystem, the Beam, Plasma & Accelerator Simulation Toolkit ([**BLAST**][blast]), that is specifically designed for beam dynamics simulations. 
+You can find the [ImpactX documentation][impactx] and [repository][impactx-github] for more information.
+Here are the key differences:
+
+* **ImpactX** is optimized for beam dynamics applications and uses envelope tracking or symplectic particle tracking methods. 
+It is typically much faster than WarpX for cases where space charge effects are weak or can be approximated.
+
+A fundamental distinction between these codes is their evolution variable:
+
+* **WarpX** is a **t-based** (time-based) code: 
+It evolves the system in time by solving Maxwell's or Poisson's equations on a spatial grid and advancing particles and fields self-consistently in time steps. 
+This makes it suitable for:
+  - Strong space charge effects that require self-consistent field solutions
+  - Wakefield effects that need to be captured
+  - Full electromagnetic field solutions
+  - Plasma-beam interactions or other complex collective effects
+  - Cases where the full time evolution of fields is important
+
+* **ImpactX** is a **z-based** (position-based) code: 
+It tracks particles along the beamline (z-direction) through accelerator elements, advancing the beam's state as it propagates through the lattice. 
+This approach is more efficient for:
+  - Space charge effects that are negligible or can be approximated
+  - Fast simulations for optics design and optimization
+  - Linear beam dynamics studies
+  - Envelope models for rapid prototyping
+  - Cases where you're primarily interested in the beam's evolution through the accelerator structure rather than detailed time-dependent field evolution
+
+For this FODO cell tutorial, we'll use WarpX to demonstrate how to set up a beam dynamics simulation with the option to include or exclude space charge effects.
+
+::: callout
+## Equivalent ImpactX Example
+
+If you're interested in seeing how a similar FODO cell simulation can be set up using ImpactX, 
+check out the [ImpactX FODO cell example with 2D space charge using envelope tracking][impactx-fodo-example]. 
+This example demonstrates the envelope tracking approach.
+:::
+
+
+Whenever you need to prepare an input file, [this is where you want to go](https://warpx.readthedocs.io/en/latest/usage/parameters.html).
+
+:::::::::::::::::::::::::::::::::::::::::: spoiler
+
+### Let's take a look at the input file
+
+```{r engine='bash', echo=FALSE, comment=''}
+cat ./files/inputs_3d_fodo_cell.txt
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Some notable details:
+
+*  [Details about the simulation setup will be added here]
+
+*  [Information about particle initialization will be added here]
+
+*  [Details about the magnetic field configuration will be added here]
+
+*  [Information about diagnostics will be added here]
+
+## Run 
+
+First things first. 
+Create a new folder where you copy the [input file](./files/inputs_3d_fodo_cell.txt). 
+The simulation should be small enough that you can run it in serial with the Conda installation of WarpX.
+
+::: spoiler
+
+## Let's run in serial
+
+```bash
+warpx.3d inputs_3d_fodo_cell.txt
+```
+
+Just like that! 💃
+Note that with Conda's WarpX you can run this anywhere in your filesystem (provided that you copied there the input of course)
+because WarpX's executables are in your `$PATH`.
+:::
+
+
+
+If you want to make the simulation faster and/or bigger, then you should run with the parallel version of WarpX.
+The optimal setup to run the simulation depends on your hardware. 
+This is an example that should work on many common laptops, even though it might not be ideal.
+
+
+::: spoiler
+
+## Let's run in parallel
+
+This is just one way of doing it!
+
+```bash
+export OMP_NUM_THREADS=2
+mpirun -np 4 <path/to/your/build/bin/warpx.3d> inputs_3d_fodo_cell.txt 
+```
+:::
+
+::: testimonial
+
+With the default parameters, it may take a while on a laptop.
+If you have access to a GPU, you can experience the speed-up yourself.
+My experiments: 35 seconds on an NVIDIA A100 GPU, more than 1 hour on 4 cores of my 12th Gen Intel(R) Core(TM) i9-12900H.
+
+:::
+
+
+## Visualize
+
+### With Python 🐍
+Now that we have the results, we can analyze them using Python.  
+We will use the [openPMD-viewer][openpmd-viewer] library to grab the data that the simulation produced in `openPMD` format. 
+Here you can find [a few great tutorials on how to use the viewer](https://openpmd-viewer.readthedocs.io/en/latest/tutorials/tutorials.html).
+If you feel nerdy and/or you need to deal with the data in parallel workflows, you can use the [openPMD-api][openpmd-api].
+
+As an example for the FODO cell simulation, we have developed a simple Jupyter notebook where we retrieve 
+the beam particle positions and analyze the beam dynamics through the cell.
+
+:::::::::::::::::::::::::::::::::::::::::: spoiler
+
+## Let's take a look at the Jupyter notebook
+
+```{r, results='asis', echo=FALSE}
+cat('<iframe src="https://nbviewer.org/github/BLAST-WarpX/warpx-tutorials/blob/main/episodes/files/analysis_3d_fodo_cell.ipynb" 
+           width="100%" height="800" style="border:none;">
+     </iframe>')
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::
+
+You can [download the notebook](./files/analysis_3d_fodo_cell.ipynb) and try it yourself.
+Remember to either run the notebook from the simulation directory or change the corresponding path in the notebook.
+
+
+::::::::::::::::::::::::::::::::::::: keypoints 
+ 🎯 Particle tracking follows individual particles, while envelope tracking follows the beam envelope - particle tracking is more detailed but computationally expensive.
+
+ 🔬 A FODO cell is a periodic focusing structure with alternating focusing and defocusing quadrupole magnets.
+
+ ⚡ WarpX allows you to turn space charge effects on/off and define arbitrary external fields.
+
+ 🚀 WarpX is a full PIC code best suited for strong space charge effects and complex electromagnetic interactions. 
+ For cases with negligible space charge, **ImpactX** may be a more efficient choice.
+
+ 🔍 The [**documentation**][warpx-readthedocs] is the first place to look for answers, 
+ otherwise check out our [**issues**][warpx-issues] and [**discussions**][warpx-discussions] and ask there.  
+
+ 📷 To analyze and visualize the simulation results in [**openPMD**][openpmd] format, 
+ you can use the [**openPMD-viewer**][openpmd-viewer] library for Python.
+
+::::::::::::::::::::::::::::::::::::::::::::::::
