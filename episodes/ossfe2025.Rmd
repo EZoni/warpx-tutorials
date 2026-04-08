@@ -22,7 +22,7 @@ exercises: 30
 
 ## WarpX, a particle-in-cell code
 
-Welcome to the WarpX tutorial at [OSSFE 2025](https://ossfe.github.io/)! 👋
+Welcome to the WarpX tutorial at [OSSFE 2025](https://ossfe.github.io/) (March 18, 2025)! 👋
 
 [WarpX][warpx] is a general purpose **open-source** **high-performance** **Particle-In-Cell** (PIC) code.  
 If you are not familiar with the PIC method, here is a picture that condenses the core idea:  
